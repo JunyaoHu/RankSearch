@@ -31,7 +31,7 @@ def search(name, number):
     data = pd.DataFrame(data.values.T, index=data.columns, columns=data.index)
     data.to_csv('result.csv', index=False, encoding="GBK", mode='a', header=False)
 
-file = u"rank_jike.xlsx"
+file = u"jike.xlsx"
 df = pd.read_excel(file,  dtype={'学号': str})
 length = len(df)
 for i in range(length):
