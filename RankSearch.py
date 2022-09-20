@@ -2,19 +2,37 @@ from time import sleep
 
 from msedge.selenium_tools import Edge, EdgeOptions
 from selenium.webdriver.common.by import By
-import numpy as np
+
 import pandas as pd
 
-def search(name, number):
-    options = EdgeOptions()
-    options.use_chromium = True
-    options.add_argument("headless")
-    driver = Edge(executable_path='src/msedgedriver.exe', options=options)
-    driver.implicitly_wait(10)
-    driver.get(r'http://cumtcs19.chafenba.com/')
-    driver.set_window_size(width=300, height=600, windowHandle='current')
-    # 找搜索框，输入关键词
-    part = driver.find_element(By.CSS_SELECTOR, "#time > option:nth-child(4)")
+options = EdgeOptions()
+options.use_chromium = True
+options.add_argument("headless")
+driver = Edge(executable_path='src/msedgedriver.exe', options=options)
+# driver.implicitly_wait(2)
+# driver.set_window_size(width=300, height=600, windowHandle='current')
+
+# -----------修改查询网站 -------------------
+search_link = 'http://cumtcs19.chafenba.com/'
+# -----------修改查询列表序号（下标从1开始） ----
+index = 2
+# -----------读取姓名学号表格-----------------
+info_file = "jike.xlsx"
+# -----------成绩输出文件名-------------------
+score_file = "result.csv"
+
+df = pd.read_excel(info_file, dtype={'学号': str})
+length = len(df)
+first = True
+stu_info_list = []
+title = ""
+for i in range(length):
+    name = df.iloc[i, 0]
+    number = df.iloc[i, 1]
+
+    driver.get(search_link)
+
+    part = driver.find_element(By.CSS_SELECTOR, f"#time > option:nth-child({index})")
     part.click()
     stu_num = driver.find_element(By.CSS_SELECTOR, "#sfzh0")
     stu_num.send_keys(number)
@@ -22,20 +40,17 @@ def search(name, number):
     stu_name.send_keys(name)
     driver.find_element(By.CSS_SELECTOR, "#sub").click()
 
-    stu_info = driver.find_elements(By.CSS_SELECTOR,"#main > div:nth-child(2) > table > tbody > tr > td")
-    stu_info_list =[]
-    for i in stu_info:
-        stu_info_list.append(i.text)
+    score_info = driver.find_elements(By.CSS_SELECTOR, "#main > div:nth-child(2) > table > tbody > tr > td")
+    if first:
+        title = [s.get_attribute("data-label") for s in score_info]
+        stu_info_list.append(title)
+        # print(title)
+        first = False
 
-    data = pd.DataFrame(stu_info_list)
-    data = pd.DataFrame(data.values.T, index=data.columns, columns=data.index)
-    data.to_csv('result.csv', index=False, encoding="GBK", mode='a', header=False)
+    score = [s.text for s in score_info]
+    stu_info_list.append(score)
 
-file = u"jike.xlsx"
-df = pd.read_excel(file,  dtype={'学号': str})
-length = len(df)
-for i in range(length):
-    name = df.iloc[i, 0]
-    number = df.iloc[i, 1]
-    search(name, number)
     print(i, length, name + " ok.")
+
+data = pd.DataFrame(stu_info_list)
+data.to_csv(score_file, index=False, encoding="GBK")
